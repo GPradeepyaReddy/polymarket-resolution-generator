@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Polymarket Resolution Language Generator</title>
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --surface2: #f2f2ef;
+    --border: rgba(0,0,0,0.09);
+    --border-hover: rgba(0,0,0,0.18);
+    --text: #111111;
+    --muted: #666;
+    --hint: #aaa;
+    --accent: #ADDF40;
+    --accent-dim: rgba(173,223,64,0.08);
+    --accent-border: rgba(173,223,64,0.3);
+    --amber: #b06d00;
+    --amber-dim: rgba(176,109,0,0.08);
+    --red: #cc2222;
+    --red-dim: rgba(204,34,34,0.08);
+    --blue: #1a5fcc;
+    --blue-dim: rgba(26,95,204,0.08);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --mono: 'JetBrains Mono', 'Fira Mono', 'Cascadia Code', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'Inter', 'Segoe UI', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .logo-mark {
+    width: 32px;
+    height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #111;
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  header p {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  .badge {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid var(--accent-border);
+    letter-spacing: 0.04em;
+  }
+
+  main {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+  }
+
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .form-card h2 {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.25rem;
+  }
+
+  .field { margin-bottom: 1rem; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+
+  input[type=text],
+  select,
+  textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  input[type=text]:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--accent);
+  }
+
+  input::placeholder, textarea::placeholder { color: var(--hint); }
+
+  textarea {
+    min-height: 88px;
+    resize: vertical;
+    line-height: 1.6;
+  }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+    cursor: pointer;
+  }
+
+  select option { background: #ffffff; color: #111; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  @media (max-width: 580px) {
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+    main { padding: 1.5rem 1rem; }
+    header { padding: 1rem; }
+  }
+
+  .generate-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #111;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.02em;
+    margin-top: 0.25rem;
+  }
+
+  .generate-btn:hover { opacity: 0.9; }
+  .generate-btn:active { transform: scale(0.99); }
+
+  .output-wrap { display: none; }
+  .output-wrap.visible { display: block; }
+
+  .output-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 1px;
+  }
+
+  .output-block:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+  .output-block:last-child { border-radius: 0 0 var(--radius) var(--radius); margin-bottom: 1.25rem; }
+  .output-block:only-child { border-radius: var(--radius); }
+
+  .block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .block-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .copy-btn {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border-hover);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    font-family: inherit;
+  }
+
+  .copy-btn:hover { color: var(--text); border-color: var(--border-hover); }
+  .copy-btn.copied { color: var(--accent); border-color: var(--accent-border); }
+
+  .block-body {
+    padding: 14px 16px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .block-body.mono {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: #ccc;
+  }
+
+  .title-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    padding: 14px 16px;
+  }
+
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 14px 16px;
+  }
+
+  .pill {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .pill-green { background: rgba(173,223,64,0.15); color: #4a6e00; border: 1px solid rgba(173,223,64,0.5); }
+  .pill-amber { background: rgba(176,109,0,0.08); color: #7a4d00; border: 1px solid rgba(176,109,0,0.25); }
+  .pill-red   { background: rgba(204,34,34,0.08); color: #991a1a; border: 1px solid rgba(204,34,34,0.25); }
+  .pill-blue  { background: rgba(26,95,204,0.08); color: #1a4a99; border: 1px solid rgba(26,95,204,0.25); }
+
+  .warning {
+    background: rgba(176,109,0,0.08);
+    border: 1px solid rgba(176,109,0,0.2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #7a4d00;
+    margin-bottom: 1.25rem;
+    display: none;
+  }
+
+  .warning.visible { display: block; }
+
+  .export-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 2rem;
+  }
+
+  .export-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-hover);
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    font-weight: 500;
+  }
+
+  .export-btn:hover { color: var(--text); border-color: var(--border-hover); }
+
+  footer {
+    text-align: center;
+    padding: 2rem;
+    font-size: 12px;
+    color: var(--hint);
+    border-top: 1px solid var(--border);
+  }
+
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">R</div>
+  <div>
+    <h1>Resolution Language Generator</h1>
+    <p>Polymarket-grade market resolution criteria</p>
+  </div>
+  <span class="badge">v1.0</span>
+</header>
+
+<main>
+
+  <div class="form-card">
+    <h2>Market details</h2>
+    <div class="field">
+      <label>Market question</label>
+      <textarea id="question" placeholder="e.g. Will Anthropic's Claude Fable 5 be restored for general access before July 15, 2026?"></textarea>
+    </div>
+    <div class="grid2" style="margin-bottom:1rem;">
+      <div class="field" style="margin-bottom:0;">
+        <label>Category</label>
+        <select id="category">
+          <option value="ai">AI / Technology</option>
+          <option value="politics">Politics / Elections</option>
+          <option value="finance">Finance / IPO / Markets</option>
+          <option value="geopolitics">Geopolitics / Policy</option>
+          <option value="sports">Sports</option>
+          <option value="science">Science / Climate</option>
+          <option value="crypto">Crypto</option>
+          <option value="culture">Culture / Media</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Resolution type</label>
+        <select id="restype">
+          <option value="binary">Binary (Yes / No)</option>
+          <option value="scalar">Scalar (numeric threshold)</option>
+          <option value="multi">Multi-outcome</option>
+          <option value="date">Date-based (when will X happen)</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid3">
+      <div class="field" style="margin-bottom:0;">
+        <label>Primary source</label>
+        <select id="source">
+          <option value="official">Official statement / blog</option>
+          <option value="sec">SEC / EDGAR filing</option>
+          <option value="wire">Reuters / AP wire</option>
+          <option value="govt">Government / Federal Register</option>
+          <option value="exchange">Exchange / market data</option>
+          <option value="sports_body">Sports governing body</option>
+          <option value="on_chain">On-chain data</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Resolution deadline</label>
+        <input type="text" id="deadline" placeholder="e.g. July 15, 2026 11:59pm ET" />
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Key entity / ticker</label>
+        <input type="text" id="entity" placeholder="e.g. Anthropic, SPCX, BTC" />
+      </div>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h2>Edge cases (optional)</h2>
+    <div class="field" style="margin-bottom:0;">
+      <label>Known ambiguity or edge case</label>
+      <input type="text" id="edge" placeholder="e.g. partial restore only for US users, N/A scenario, contested result..." />
+    </div>
+  </div>
+
+  <button class="generate-btn" onclick="generate()">Generate resolution language</button>
+
+  <div class="output-wrap" id="output-wrap">
+
+    <div class="warning" id="warn"></div>
+
+    <div class="output-block">
+      <div class="block-header">
+        <span class="block-label">Market title</span>
+        <button class="copy-btn" onclick="copyBlock('title-out', this)">Copy</button>
+      </div>
+      <div class="title-text" id="title-out"></div>
+    </div>
+
+    <div class="output-block">
+      <div class="block-header">
+        <span class="block-label">Resolution criteria</span>
+        <button class="copy-btn" onclick="copyBlock('criteria-out', this)">Copy</button>
+      </div>
+      <div class="block-body" id="criteria-out"></div>
+    </div>
+
+    <div class="output-block">
+      <div class="block-header">
+        <span class="block-label">Source hierarchy</span>
+        <button class="copy-btn" onclick="copyBlock('sources-out', this)">Copy</button>
+      </div>
+      <div class="block-body mono" id="sources-out"></div>
+    </div>
+
+    <div class="output-block">
+      <div class="block-header">
+        <span class="block-label">N/A &amp; edge case handling</span>
+        <button class="copy-btn" onclick="copyBlock('edge-out', this)">Copy</button>
+      </div>
+      <div class="block-body" id="edge-out"></div>
+    </div>
+
+    <div class="output-block">
+      <div class="block-header">
+        <span class="block-label">Quality signals</span>
+      </div>
+      <div class="pills" id="pills-out"></div>
+    </div>
+
+    <div class="export-row">
+      <button class="export-btn" onclick="copyAll()">Copy all as text</button>
+      <button class="export-btn" onclick="downloadMd()">Download .md</button>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  Built for Polymarket market creation &mdash;
+  <a href="https://github.com" target="_blank">GitHub</a>
+</footer>
+
+<script>
+  const sourceLabel = {
+    official: (e) => `${e} official blog post, press release, or status page`,
+    sec: (e) => `SEC EDGAR filing (S-1, 8-K, or prospectus) for ${e}`,
+    wire: () => `Reuters or Associated Press wire report citing primary source`,
+    govt: () => `Federal Register, agency press release, or official .gov publication`,
+    exchange: (e) => `Primary exchange closing price or official market data provider (Bloomberg / Refinitiv) for ${e}`,
+    sports_body: () => `Official governing body result (league website, official scoresheet)`,
+    on_chain: () => `On-chain data from primary blockchain explorer (Etherscan / Solscan)`
+  };
+
+  const sourceHierarchy = {
+    official: (e) => `1. ${e} official blog post or status page\n2. Reuters or AP citing company statement\n3. SEC filing or 8-K if publicly traded`,
+    sec: (e) => `1. SEC EDGAR — primary filing document for ${e}\n2. Reuters / Bloomberg IPO pricing wire\n3. Exchange official listing announcement`,
+    wire: () => `1. Reuters primary wire\n2. Associated Press\n3. Bloomberg (if accessible to resolvers)`,
+    govt: () => `1. Federal Register or agency press release\n2. Reuters / AP reporting the official action\n3. Official agency .gov URL`,
+    exchange: (e) => `1. Exchange official closing data for ${e}\n2. Bloomberg / Refinitiv terminal data\n3. Yahoo Finance as secondary fallback`,
+    sports_body: () => `1. Official league / governing body website\n2. Official match report or scoresheet\n3. ESPN / BBC Sport as secondary confirmation`,
+    on_chain: () => `1. Primary blockchain explorer (Etherscan / Solscan)\n2. CoinGecko or CoinMarketCap for price data\n3. Protocol's official dashboard`
+  };
+
+  const catEdge = {
+    ai: (e) => `If ${e} restores access for some users but not all (e.g. US-only or enterprise-only), this market resolves based on whether general API or paid subscriber access is confirmed restored. A government-only or internal-only restore does NOT resolve YES.\n\nIf ${e} is acquired or ceases operations before the deadline, the market resolves N/A.`,
+    politics: () => `If the event is postponed, cancelled, or the result is legally contested, the market will be paused pending official certification. Preliminary or projected results do not trigger resolution — only certified official results count.`,
+    finance: (e) => `If the ${e} IPO is postponed, withdrawn, or priced outside the resolution window, the market holds until official pricing is confirmed. A SPAC merger or direct listing at the named entity qualifies if it meets the valuation or listing criteria. If the offering is restructured with a different entity name, resolution is at admin discretion.`,
+    geopolitics: (e) => `If the action is announced but not formally enacted (e.g. a draft executive order, a verbal statement, or a leaked document), this market does NOT resolve YES. A formal signed document, Federal Register publication, or official agency press release is required for ${e}.`,
+    sports: () => `If the event is postponed beyond the resolution deadline, the market resolves N/A. If a result is officially overturned within 48 hours of market resolution, the market may be re-opened pending admin review.`,
+    science: () => `If official data is revised after the resolution date, the market resolves on the data available at the time of the deadline, not on retroactively corrected figures. Preliminary data counts if no final figure is published before the deadline.`,
+    crypto: (e) => `Price for ${e} is determined by the 24-hour VWAP (volume-weighted average price) on the resolution date, sourced from CoinGecko. A temporary spike or dip that does not persist for the full UTC day does not count toward resolution. In the event of a chain fork or exchange halt, the market is paused pending admin review.`,
+    culture: (e) => `If the ${e} event (release, premiere, announcement) is delayed past the resolution date, the market resolves NO. Leaks, unofficial announcements, or pre-release access to a limited audience do not count as YES. An official press release or public product page from the responsible party is required.`
+  };
+
+  let lastOutput = {};
+
+  function generate() {
+    const q = document.getElementById('question').value.trim();
+    const cat = document.getElementById('category').value;
+    const restype = document.getElementById('restype').value;
+    const src = document.getElementById('source').value;
+    const deadline = document.getElementById('deadline').value.trim();
+    const entity = document.getElementById('entity').value.trim();
+    const edge = document.getElementById('edge').value.trim();
+
+    if (!q) { alert('Please enter a market question first.'); return; }
+
+    const e = entity || '[entity]';
+    const dl = deadline || '[resolution date] at 11:59pm ET';
+
+    let title = '';
+    let criteria = '';
+
+    if (restype === 'binary') {
+      title = q.replace(/\?$/, '').trim();
+      criteria = `This market resolves YES if ${e} confirms [the specified action] on or before ${dl}, as confirmed by ${sourceLabel[src](e)}.\n\nThis market resolves NO if the condition is not met by the resolution deadline, if ${e} announces it will not proceed, or if no credible primary source confirms the outcome within 48 hours of the deadline.`;
+    } else if (restype === 'scalar') {
+      title = q;
+      criteria = `This market resolves based on the official figure for ${e} reported by ${sourceLabel[src](e)} as of ${dl}.\n\nThe threshold for YES resolution is [specific numeric value]. If the reported figure meets or exceeds this threshold, the market resolves YES. If the figure is below the threshold, not officially reported, or subject to ongoing revision at the deadline, the market resolves NO.`;
+    } else if (restype === 'multi') {
+      title = q;
+      criteria = `This market resolves to the outcome that best matches the official result for ${e}, as confirmed by ${sourceLabel[src](e)} on or before ${dl}.\n\nEach listed outcome is mutually exclusive. Shares in the winning outcome pay $1.00; all others pay $0. If none of the listed outcomes occur by the deadline, the market resolves to "Other / None" if that bucket exists, or resolves N/A if not.`;
+    } else if (restype === 'date') {
+      title = `When will ${e} [action]?`;
+      criteria = `This market resolves to the specific date on which ${e} officially [action], as first confirmed by ${sourceLabel[src](e)}.\n\nThe resolution date is the date of the official announcement or the effective date of the action — whichever is earlier. If the event does not occur before ${dl}, all date-bucket shares resolve NO and the market expires without a YES resolution.`;
+    }
+
+    const edgeCat = catEdge[cat] ? catEdge[cat](e) : '';
+    const edgeUser = edge ? `\n\nAdditional edge case noted by market creator: "${edge}"\n\nIf this scenario occurs, the market will be reviewed by the Polymarket resolution committee and resolved using the closest available primary source consistent with the intent of this market.` : '';
+    const edgeFull = edgeCat + edgeUser;
+
+    const srcHier = sourceHierarchy[src](e);
+
+    const pills = [];
+    if (src === 'official' || src === 'sec' || src === 'govt') pills.push({ text: 'Source: unambiguous', cls: 'pill-green' });
+    else pills.push({ text: 'Source: needs active monitoring', cls: 'pill-amber' });
+    if (deadline) pills.push({ text: 'Deadline: set', cls: 'pill-green' });
+    else pills.push({ text: 'Deadline: missing', cls: 'pill-red' });
+    if (restype === 'binary') pills.push({ text: 'Binary: easy to resolve', cls: 'pill-green' });
+    else if (restype === 'scalar') pills.push({ text: 'Scalar: define threshold clearly', cls: 'pill-amber' });
+    else if (restype === 'multi') pills.push({ text: 'Multi-outcome: higher dispute risk', cls: 'pill-amber' });
+    else pills.push({ text: 'Date market: ensure bucket coverage', cls: 'pill-amber' });
+    if (entity) pills.push({ text: `Entity: ${e}`, cls: 'pill-blue' });
+    if (edge) pills.push({ text: 'Edge cases: documented', cls: 'pill-green' });
+    else pills.push({ text: 'Edge cases: not documented', cls: 'pill-amber' });
+
+    document.getElementById('title-out').textContent = title;
+    document.getElementById('criteria-out').textContent = criteria;
+    document.getElementById('sources-out').textContent = srcHier;
+    document.getElementById('edge-out').textContent = edgeFull;
+
+    const pillsEl = document.getElementById('pills-out');
+    pillsEl.innerHTML = '';
+    pills.forEach(p => {
+      const span = document.createElement('span');
+      span.className = 'pill ' + p.cls;
+      span.textContent = p.text;
+      pillsEl.appendChild(span);
+    });
+
+    const warn = document.getElementById('warn');
+    if (!deadline && !entity) {
+      warn.textContent = 'Missing deadline and entity — both are required for a publishable Polymarket market.';
+      warn.classList.add('visible');
+    } else if (!deadline) {
+      warn.textContent = 'No resolution deadline set — all Polymarket markets require a hard deadline with timezone.';
+      warn.classList.add('visible');
+    } else if (!entity) {
+      warn.textContent = 'No entity specified — resolution criteria will be ambiguous without a named subject or ticker.';
+      warn.classList.add('visible');
+    } else {
+      warn.classList.remove('visible');
+    }
+
+    lastOutput = { title, criteria, srcHier, edgeFull, pills };
+    document.getElementById('output-wrap').classList.add('visible');
+    document.getElementById('output-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function copyBlock(id, btn) {
+    const text = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+    });
+  }
+
+  function copyAll() {
+    const { title, criteria, srcHier, edgeFull } = lastOutput;
+    const full = `MARKET TITLE\n${title}\n\nRESOLUTION CRITERIA\n${criteria}\n\nSOURCE HIERARCHY\n${srcHier}\n\nEDGE CASE HANDLING\n${edgeFull}`;
+    navigator.clipboard.writeText(full).then(() => {
+      const btn = event.target;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy all as text'; }, 1500);
+    });
+  }
+
+  function downloadMd() {
+    const { title, criteria, srcHier, edgeFull } = lastOutput;
+    const q = document.getElementById('question').value.trim();
+    const md = `# ${title}\n\n> ${q}\n\n## Resolution criteria\n\n${criteria}\n\n## Source hierarchy\n\n\`\`\`\n${srcHier}\n\`\`\`\n\n## Edge case handling\n\n${edgeFull}\n\n---\n*Generated with Polymarket Resolution Language Generator*\n`;
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = title.replace(/[^a-z0-9]/gi, '-').toLowerCase().slice(0, 60) + '.md';
+    a.click();
+  }
+</script>
+
+</body>
+</html>
